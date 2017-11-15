@@ -7,7 +7,7 @@ Created on Thu Nov  9 18:04:24 2017
 """
 
 import os
-from enredados1O import cartography
+from TEST2_enredados1O import cartography
 
 def gdf_to_nxdigraph(hashtag):
     input_gdf='../gdf_gephi/'+hashtag+'.gdf'
@@ -129,96 +129,7 @@ def summary_and_graph(hashtag):
     # If it has been possible to create a nx digraph...
     if G!=None:
 #        N=len(G)
-#        L=len(G.edges())
-#        print 'This network has',N,'nodes and',L,'links.'
-#
-#        # Look for the summary file
-#        try:
-#            filename='../summary/'+hashtag+'_summary.csv'
-#            summary_file = open(filename, "r")
-#            summary_file.close()
-#        except:
-#            print 'No summary file found.'
-#            pass
-#
-#        # Create a summary file if required
-#        #number of interacting accounts (that have/have been mentioned or RT)
-#        n_interacting = len(G)
-#        check_txt=0
-#        #activity
-#        filename='../raw_data/'+hashtag+'.txt'
-#        txtfile = open(filename,'r')
-#        print 'Reading file txt...'
-#        check_txt=1
-#
-#        n_TW=0
-#        n_RT=0
-#        act={}
-#        emitting={}
-#        lc=0
-#        while 1:
-#            line = txtfile.readline()
-#            lc+=1
-#            if line=='': break
-#            # each line is a TW
-#            n_TW+=1
-#            # n is an active user, emitting or RT
-#            n = line.split()[0]
-#            act[n] = 1
-#            # is a RT?
-#            if 'RT' in line:
-#                n_RT+=1
-#                if n not in emitting.keys():
-#                    emitting[n] = 0
-#            else:
-#                emitting[n]=1
-#
-#
-#            # is n an interacting user? (if the TW is a RT, n is always an interactin user)
-#            # if not, add the isolated node
-#            if n not in G.nodes():
-#                G.add_node(n)
-#
-#            if lc%1000==0: print 'line ',lc
-#        txtfile.close()
-#
-#        print('Read txt done')
-#        for n in G.nodes():
-#            if n not in act.keys():
-#                act[n] = 0
-#                emitting[n] = 0
-#
-#        # number of accounts...
-#        # 1) total
-#        tot_accounts = len(G)
-#        # 2) active: emitting or RT
-#        n_active = sum(a for a in act.values())
-#        # 3) emitting but not gaining attention
-#        n_loosers = tot_accounts - n_interacting
-#        # 4) passive accounts that receive attention but do nothing
-#        n_passive = tot_accounts - n_active
-#        # 5) emitting accounts (with emitting TW)
-#        n_emitting = sum(x for x in emitting.values())
-#        # Set&print node attributes
-#        nx.set_node_attributes(G, 'act', act)
-#        nx.set_node_attributes(G, 'emitting', emitting)
-
-        # With or without TXT file, if the summary has to be (re)written, calculate centralities
         G, IPR = centralities(G)
-        # Summary File
-#        filename='../summary/'+hashtag+'_summary.csv'
-#        sumfile=open(filename,'wb')
-#
-#        if check_txt==1:
-#            print >>sumfile,"tot,active,interacting,passive,emitting,loosers,tot TW, RT,n_ORIGINAL, IPR"
-#            print >>sumfile,tot_accounts,",",n_active,",",n_interacting,",",n_passive,",",n_emitting,",",n_loosers,",",n_TW,",",n_RT,",",n_TW-n_RT,",",IPR
-#            sumfile.close()
-#        else:
-#            print >>sumfile,"Interacting, IPR"
-#            print >>sumfile,len(G),",",IPR
-#            sumfile.close()
-
-
         # Make cartography
         plotCartography = " "
         G = cartography(G,hashtag,plot=plotCartography)
@@ -346,24 +257,19 @@ def nxdigraph_to_gdf(G, path, node_attr=None, edge_attr=None, giant=False):
 def centralities(G):
 
     import networkx as nx
+    from random import randint
     # Centrality and centralization
     # PageRank centrality
-    if len(G)>5000:
-        check=True
-        if len(G)>50000:
-            checkPR=True
-        else: checkPR=False
-    else:
-        check=False
-        checkPR=False
-
-    go_on='Y'
-    while(go_on=='Y'):
-        if checkPR==True:
-            go_on=raw_input("Do yo want to calculate the PageRank centrality? Y/N\n")[0]
-            if go_on=='y': go_on='Y'
-
-        if go_on!='Y': break
+    
+    IPR = None
+    
+    N = nx.number_of_nodes(G)
+    node = randint(0,N-1)    
+    PRfound = 'PageRank' in G.nodes(data=True)[node][1].keys()
+    ECfound = 'EC' in G.nodes(data=True)[node][1].keys()
+    Fdlrfound = 'Fiedler' in G.nodes(data=True)[node][1].keys()
+        
+    if (PRfound == False):
         aux = nx.pagerank(G)
         pr = []
         for key, value in aux.iteritems():
@@ -377,14 +283,9 @@ def centralities(G):
             PRdic[n]=pr[i][1]
         nx.set_node_attributes(G, 'PageRank', PRdic)
         print 'PageRank done'
-        go_on='N'
 
     # Eigenvector Centralization (IPR)
-    go_on = 'Y'
-    while (go_on=='Y'):
-        if check == True:
-            go_on='Y'
-
+    if (ECfound == False):
         Gcc = sorted(nx.weakly_connected_component_subgraphs(G), key=len, reverse=True)
         G0 = Gcc[0] #largest connected subgraph
         EC = nx.eigenvector_centrality(G0)
@@ -396,14 +297,9 @@ def centralities(G):
         nx.set_node_attributes(G, 'EC', EC)
         print 'Eigenvector Centrality done'
         print 'IPR=',round(IPR,4)
-        go_on = 'N'
 
     # Fiedler eigenvector
-    go_on = 'Y'
-    while (go_on == 'Y'):
-        if check == True:
-            go_on = 'Y'
-        if go_on != 'Y': break
+    if (Fdlrfound == False):
         from networkx.linalg.algebraicconnectivity import fiedler_vector
         import numpy as np
         from numpy import linalg as la
@@ -426,8 +322,8 @@ def centralities(G):
                 FVdic[n]=0
         nx.set_node_attributes(G,'Fiedler',FVdic)
         print 'Fiedler eigenvector done'
-        go_on = 'N'
 
+    
     return G,IPR
 
 
