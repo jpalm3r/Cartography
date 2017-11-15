@@ -107,7 +107,7 @@ def cartography(G_0, hashtag, plot = None):
         
         z_node = G.node[node][Z]
         P_node = G.node[node]["P_coef"]
-        relevance = z_node*P_node # Relevance is defined to highlight outliars from each module
+        relevance = np.log(G.degree(node))*z_node*P_node # Relevance is defined to highlight outliars from each module
         
         return relevance
 
@@ -288,12 +288,18 @@ def cartography(G_0, hashtag, plot = None):
         # Drawing cartography plot background
         fig, ax1 = plt.subplots(1,1, figsize = (20,12))
         ax1 = DrawCarto(ax1,PlotCeiling,PlotFloor,hashtag)
-
+        
+        # ax2 is only to add the legend of relevant users
+        ax2 = fig.add_axes([0,0,1,1],frameon=False)
+        ax2.patch.set_alpha(0.0)
+        ax2.set_yticks([])
+        ax2.set_xticks([])
+        
         # For readability, only plotting 6 biggest categories
         Categories2plot = min(numPartitions,6)
         # Colors for the categories
         C = ["Tomato","DarkTurquoise","DeepPink","SlateBlue","SpringGreen","Teal"]
-        c = 0
+        c_index = 0
         # Vectors for the legend of relevant users
         CategoryLeaders = []
         Numbers = [n+1 for n in range(3*Categories2plot)]
@@ -308,17 +314,17 @@ def cartography(G_0, hashtag, plot = None):
             Ps = [G.node[n]['P_coef'] for n in module]               
             Zs = [G.node[n][zKind] for n in module]
             
-            if (c < Categories2plot):
+            if (c_index < Categories2plot):
 
                 big3,ModuleSizes = FindKeyRoles(G, module, K1 = plot)
                 RELEVANCES = RELEVANCES + [Relevance(G,user,K=plot) for user in big3[0]]
-
-                ax1.scatter(Ps,Zs, c = C[c], s=ModuleSizes, lw = 0, zorder=100)
-                title = "#" + hashtag + " (" + plot + " Degree)"
+                
+                Color = C[c_index]
+                Order = 100
 
                 # Each relevant user is labelled with a number to be identified in
                 # the plot. Index of Big3 0,1 and 2 are: names, Ps and Zs respectively
-                nums = Numbers[3*c:3*(1+c)]
+                nums = Numbers[3*c_index:3*(1+c_index)]
                 for num, label, x, y in zip(nums, big3[0],big3[1],big3[2]):
                     ax1.annotate(str(num),xy=(x, y), xytext=(-10, 0),
                                  textcoords='offset points',fontsize = 16,zorder=150)
@@ -327,7 +333,7 @@ def cartography(G_0, hashtag, plot = None):
                     NameNums.append(big3[0][i] + " (" + str(nums[i]) + ")")
                 CategoryLeaders.append(" \n".join(NameNums))
 
-                c += 1
+                c_index += 1
 
             # The rest of the communities are printed in light gray
             else:
@@ -335,20 +341,22 @@ def cartography(G_0, hashtag, plot = None):
                 for user in module:
                     r = Relevance(G,user,K=plot)
                     if r > np.mean(RELEVANCES):
-                        OTHERS.update({user:{'coord':(G.node[n]['P_coef'],G.node[n][zKind]), 'num': 0}})
+                        OTHERS.update({user:{'coord':(G.node[user]['P_coef'],G.node[user][zKind]), 'num': 0}})
+                        
+                Color = 'WhiteSmoke'
+                Order = 20
 
-                plt.scatter(Ps,Zs, c = "WhiteSmoke", s=ModuleSizes, lw = 0, zorder=20)
-                title = "#" + hashtag + " (" + plot + " Degree)"
-
+            ax1.scatter(Ps,Zs, c = Color, s=ModuleSizes, lw = 0, zorder=Order)
+        
+        title = "#" + hashtag + " (" + plot + " Degree)"
 
         PATCHES = []
         for m in range(Categories2plot):
             PATCHES.append(mpatches.Patch([],[],color=C[m]))
-            
         
         ax1.set_title(title, fontsize=36)
-        legendRelevant = ax1.legend(handles=PATCHES,labels=CategoryLeaders,title="Relevant Users",fontsize=18,frameon=False,
-                            ncol=Categories2plot,loc="upper center",bbox_to_anchor=(0.5,-0.12))
+        legendRelevant = ax2.legend(handles=PATCHES,labels=CategoryLeaders,title="Relevant Users",fontsize=18,frameon=False,
+                            ncol=Categories2plot,loc="upper center",bbox_to_anchor=(0.5,-0.02))
         plt.setp(legendRelevant.get_title(),fontsize=22)
         
         # Plotting other relevant users that are not in the TOP communities
@@ -371,8 +379,6 @@ def cartography(G_0, hashtag, plot = None):
         #Drawing node distribution
         axPercents = fig.add_axes([0.082, 0.64, 0.22, 0.28]) # [relX, relY, relWidth, relHeight]
         
-#        WIP WIP WIP This legend is overwriting the former!!!!!!
-        ax1.add_artist(legendRelevant)
         legendOthers = ax1.legend(handles=OtherPATCHES,labels=Others,title="Other Users",fontsize=18,frameon=False,
                             ncol=1,loc="upper left",bbox_to_anchor=(1.0,1.0))
         plt.setp(legendOthers.get_title(),fontsize=22)
