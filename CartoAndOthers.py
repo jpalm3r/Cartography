@@ -1,5 +1,3 @@
-from TEST2_enredados1O import *
-
 def cartography(G_0, hashtag, plot = None):
 
     # Script that takes a graph (G) and updates a gdf file with the within
@@ -97,18 +95,18 @@ def cartography(G_0, hashtag, plot = None):
             inplot = True
 
         return inplot
-    
+
     def Relevance(G,node, K = 'All'):
-        
+
         Z = None
         if (K == 'All'): Z = 'z'
         elif (K == 'In'): Z = 'z_In'
         elif (K == 'Out'): Z = 'z_Out'
-        
+
         z_node = G.node[node][Z]
         P_node = G.node[node]["P_coef"]
         relevance = np.log(G.degree(node))*z_node*P_node # Relevance is defined to highlight outliars from each module
-        
+
         return relevance
 
     def FindKeyRoles(G1,module1, K1 = 'All',Log = True):
@@ -301,22 +299,22 @@ def cartography(G_0, hashtag, plot = None):
         # Vectors for the legend of relevant users
         CategoryLeaders = []
         Numbers = [n+1 for n in range(3*Categories2plot)]
-        
+
         OTHERS = {}
         RELEVANCES = []
 
         for module in MODULES:
             # MODULES is ordered decreasingly, so the first modules are printed
             # with color for highlighting
-            
-            Ps = [G.node[n]['P_coef'] for n in module]               
+
+            Ps = [G.node[n]['P_coef'] for n in module]
             Zs = [G.node[n][zKind] for n in module]
-            
+
             if (c_index < Categories2plot):
 
                 big3,ModuleSizes = FindKeyRoles(G, module, K1 = plot)
                 RELEVANCES = RELEVANCES + [Relevance(G,user,K=plot) for user in big3[0]]
-                
+
                 Color = C[c_index]
                 Order = 100
 
@@ -335,30 +333,30 @@ def cartography(G_0, hashtag, plot = None):
 
             # The rest of the communities are printed in light gray
             else:
-                
+
                 for user in module:
                     r = Relevance(G,user,K=plot)
                     if r > np.mean(RELEVANCES):
                         OTHERS.update({user:{'coord':(G.node[user]['P_coef'],G.node[user][zKind]), 'num': 0}})
-                        
+
                 Color = 'LightGray'
                 Order = 20
 
             ax1.scatter(Ps,Zs, c = Color, s=ModuleSizes, lw = 0, zorder=Order)
-        
+
         title = "#" + hashtag + " (" + plot + " Degree)"
 
 
         PATCHES = []
         for m in range(Categories2plot):
             PATCHES.append(mpatches.Patch([],[],color=C[m]))
-            
-        
+
+
         ax1.set_title(title, fontsize=36)
         legendRelevant = ax2.legend(handles=PATCHES,labels=CategoryLeaders,title="TOP3 relevant users by community",fontsize=18,frameon=False,
                             ncol=Categories2plot,loc="upper center",bbox_to_anchor=(0.5,-0.02))
         plt.setp(legendRelevant.get_title(),fontsize=22)
-        
+
         # Plotting other relevant users that are not in the TOP communities
         OtherPATCHES = [mpatches.Patch([],[],color='LightGray')]
         finalN = len(Numbers) + len(OTHERS) + 1
@@ -375,7 +373,7 @@ def cartography(G_0, hashtag, plot = None):
             y = OTHERS[name]['coord'][1]
             ax1.annotate(str(OTHERS[name]['num']),xy=(x, y), xytext=(-10, 0),
                          textcoords='offset points',fontsize = 16,zorder=150)
-       
+
         #Drawing node distribution
         axPercents = fig.add_axes([0.082, 0.64, 0.22, 0.28]) # [relX, relY, relWidth, relHeight]
 
@@ -386,14 +384,14 @@ def cartography(G_0, hashtag, plot = None):
         P = TopicBreakdown(G,hashtag,plot = plot)
         axPercents = DrawCarto(axPercents,8,-2,hashtag,Percents=P)
         axPercents.patch.set_alpha(0.2)
-            
+
         fig.tight_layout()
         ImageName = "../summary/" + "carto_" + hashtag + "_" + plot + ".pdf"
         fig.savefig(ImageName, bbox_inches='tight',format='pdf',dpi = fig.dpi)
 
     return G
 
-def DrawCarto(ax,Ceiling,Floor,hashtag, Percents = None, user = None):
+def DrawCarto(ax,Ceiling,Floor,hashtag, Percents = None, user = None, colorbox = None):
 
     import matplotlib.patches as patches
 
@@ -425,7 +423,7 @@ def DrawCarto(ax,Ceiling,Floor,hashtag, Percents = None, user = None):
     #        ax.text(0.5, float(Ceiling + Floor)/2, '#' + hashtag, horizontalalignment = 'center', verticalalignment = 'center',
     #         color = color2, weight = "bold",fontsize=52, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':0})
         if user == None: ax.set_title('Total node distribution', fontsize=16)
-        fs = 16
+        fs = 20
         for r in range(numQ):
             Roles_Short[r] = Roles_Short[r] + '\n' + str(Percents[r])[:4] + '%'
 
@@ -442,6 +440,9 @@ def DrawCarto(ax,Ceiling,Floor,hashtag, Percents = None, user = None):
         ax.set_xlabel('Participation coefficient, P',fontsize=28)
         ax.set_ylabel('Within-module degree, Z',fontsize=28)
 
+    fcolor = "#FFE4A3"
+    if colorbox != None:
+        fcolor = colorbox
 
     for r in range(numQ):
         centerQX = Q[r][0][0] + Q[r][1]/2
@@ -449,9 +450,9 @@ def DrawCarto(ax,Ceiling,Floor,hashtag, Percents = None, user = None):
         ax.add_patch(patches.Rectangle(Q[r][0], Q[r][1], Q[r][2], facecolor='white', edgecolor="Gray", ls = '--', lw = 0.7, alpha=0.1))
         if Percents != None:
             # Filling each quadrant proportional to the percentage
-            ax.add_patch(patches.Rectangle(Q[r][0], Q[r][1], Percents[r]/100*Q[r][2], facecolor="#FFE4A3", edgecolor="OrangeRed",lw = 0.0, alpha=0.7))
+            ax.add_patch(patches.Rectangle(Q[r][0], Q[r][1], Percents[r]/100*Q[r][2], facecolor=fcolor, edgecolor="OrangeRed",lw = 0.0, alpha=0.7,zorder = 5))
             ax.text(centerQX, centerQY, Roles_Short[r] , horizontalalignment = 'center', verticalalignment = 'center',
-                     color = color1, weight = "bold",fontsize= fs, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':0})
+                     color = color1, weight = "bold",fontsize= fs, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':0},zorder = 10)
         else:
             ax.text(centerQX, centerQY, Roles[r] , horizontalalignment = 'center', verticalalignment = 'center',
                      color = color1, weight = "bold",fontsize= fs, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':0})
@@ -462,7 +463,7 @@ def DrawCarto(ax,Ceiling,Floor,hashtag, Percents = None, user = None):
     return ax
 
 def TopicBreakdown(G,hashtag,plot='All'):
-    
+
     import csv
 
     # Function that takes a topic/hashtag and returns an schema of how are
@@ -481,9 +482,9 @@ def TopicBreakdown(G,hashtag,plot='All'):
         index = int(rol[1:]) - 1
         R[index] += 1
     N = len(G.nodes())
-    
+
     P = [float(r)/N*100 for r in R]
-    
+
     P2w = [str(num)[:5] for num in P]
     filename = '../summary/' + hashtag + '_summary_carto%.csv'
     with open(filename,'wb') as f:
@@ -493,14 +494,26 @@ def TopicBreakdown(G,hashtag,plot='All'):
 
     return P
 
-def UserBreakdown(username, plot='All'):
+def UserBreakdown(username1, username2, username3 = None, plot='All'):
 
     import matplotlib.pyplot as plt
     import os
     import numpy as np
+    import matplotlib.patches as mpatches
+
+    # Script that takes 2 or 3 usernames and plot a comparison of their roles
+    # for newtworks from different topics extracted from a gdf_gephi folder
 
     H = os.listdir('../gdf_gephi/')
     Hashtags = [h[:-4] for h in H]
+    Hnums = range(1,len(H)+1)
+
+    L = [str(topic[1]) + ' ' + topic[0] + '\n' for topic in zip(Hashtags, Hnums)]
+
+    Lnew = [(word.replace('#','')).replace(' ', ' #') for word in L]
+    legend = "".join(Lnew)
+    patch = mpatches.Patch(color='None', label= legend)
+
     role =  None
     zKind = None
     if plot == 'All':
@@ -513,55 +526,101 @@ def UserBreakdown(username, plot='All'):
         role = 'Out_role'
         zKind = 'z_Out'
 
-    Roles = [0,0,0,0,0,0,0]
-    T = 0
-    Ps = []
-    Zs = []
-    Ks = []
-    for topic in Hashtags:
+    # Building the list of users
+    USERS = [username1, username2]
+    if username3 != None:
+        USERS.append(username3)
+    Nusers = len(USERS)
+    # Each user have different values of Z,K and P in order to plot
+    Ps = [[] for _ in range(Nusers)]
+    Ks = [[] for _ in range(Nusers)]
+    Zs = [[] for _ in range(Nusers)]
+    Hs = [[] for _ in range(Nusers)]
+    Roles = [[0,0,0,0,0,0,0] for _ in range(Nusers)]
+    P = []
+    T = [0 for _ in range(Nusers)]
+
+    for i in range(Nusers):
+        username = USERS[i]
         # Look for a GDF file
-        G = gdf_to_nxdigraph(topic)
-        if username in G.nodes():
-            user_role = G.node[username][role]
-            index = int(user_role[1:]) - 1
-            Roles[index] += 1
-            T += 1
-            Ps.append(float(G.node[username]['P_coef']))
-            Zs.append(float(G.node[username][zKind]))
-            Ks.append(G.degree(username))
+        for topic in Hashtags:
+            G = gdf_to_nxdigraph(topic)
+            if username in G.nodes():
+                user_role = G.node[username][role]
+                index = int(user_role[1:]) - 1
+                Roles[i][index] += 1
+                Ps[i].append(float(G.node[username]['P_coef']))
+                Zs[i].append(float(G.node[username][zKind]))
+                Hs[i].append(topic)
+                Ks[i].append(G.degree(username))
+                T[i] += 1
 
-    P = [float(r)*100/T for r in Roles]
+        P.append([float(r)*100/T[i] for r in Roles[i]])
 
-    fig = plt.figure(figsize=(10,6))
-    ax1 = fig.add_subplot(111)
+    KsFlat = [item for sublist in Ks for item in sublist]
+    ZsFlat = [item for sublist in Zs for item in sublist]
 
-    for label, x, y in zip(Hashtags,Ps,Zs):
-        ax1.annotate('#' + label,xy=(x, y), xytext=(x, y - 0.1),
-        #                     arrowprops=dict(arrowstyle="->", connectionstyle="arc3"),
-                     textcoords='data',fontsize = 12,zorder=150)
+    kMax = max(KsFlat)
+    KsNorm = [[float(k)/kMax for k in K] for K in Ks]
+    KsCale = [[2000*np.sqrt(x/(x+0.1)) for x in K] for K in KsNorm]
 
-    kMax = max(Ks)
-    KsNorm = [float(k)/kMax for k in Ks]
-    KsCale = [2000*np.sqrt(x/(x+0.1)) for x in KsNorm]
-    Ceiling = int(max(Zs)) + 3
-    Floor = int(min(Zs,-3))
-    ax1 = DrawCarto(ax1,Ceiling,Floor,topic,Percents=P,user=username)
+    # Creating main figure. It will contain the scatterplot
+    fig, ax1 = plt.subplots(1,1, figsize = (20,12))
+    # Creating subfigures, thye contain the box diagram with percentages
+    h_ax = w_ax = 0.45
+    y_ax = -0.48
+    ax2 = fig.add_axes([0.04, y_ax, w_ax, h_ax]) # [relX, relY, relWidth, relHeight]
+    ax3 = fig.add_axes([0.53, y_ax, w_ax, h_ax]) # [relX, relY, relWidth, relHeight]
+    for i in range(Nusers):
+        for label, x, y in zip(Hs[i],Ps[i],Zs[i]):
+                indInH = Hashtags.index(label)
+                ax1.annotate(Hnums[indInH], xy=(x, y), xytext=(x, y - 0.1),
+                #                     arrowprops=dict(arrowstyle="->", connectionstyle="arc3"),
+                             textcoords='data',fontsize = 16,zorder=150)
+
+
+    Ceiling = int(max(ZsFlat)) + 3
+    Floor = int(min(ZsFlat,-3))
+
+    c1 = c2 = 8
+    f1 = f2 = -2
+
+    color1 = '#F26267'
+    edgecolor1 = 'Crimson'
+    color2 = '#0086b3'
+    edgecolor2 = '#003399'
+
+    ax1 = DrawCarto(ax1,Ceiling,Floor,topic)
+    ax2 = DrawCarto(ax2,c1,f1,topic,Percents=P[0],user=username1,colorbox=color1)
+    ax3 = DrawCarto(ax3,c2,f2,topic,Percents=P[1],user=username2,colorbox=color2)
+
     Ceiling += 3 # This happens in DrawCarto
-    ax1.scatter(Ps,Zs,s = KsCale, c= '#F26267', edgecolor = 'Crimson', lw = 1.0, zorder=100)
-    ax1.text(0.5, (Ceiling + Floor)/2, '@' + username , zorder = 0, horizontalalignment = 'center', verticalalignment = 'center',
-                     color = 'Gray', weight = "bold",fontsize= 62, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':8})
-    ax1.set_title('User Breakdown (' + plot + ' degree)',fontsize = 24)
+    ax1.scatter(Ps[0],Zs[0],s = KsCale[0], c= color1, edgecolor = edgecolor1, lw = 1.0, zorder=100)
+    ax1.scatter(Ps[1],Zs[1],s = KsCale[1], c= color2, edgecolor = edgecolor2, lw = 1.0, zorder=100)
+
+    #   WIP WIP WIP
+    #    if username3 != None:
+    #        ax1.scatter(Ps[2],Zs[2],s = KsCale[2], c= '#e600ac', edgecolor = '#b300b3', lw = 1.0, zorder=100)
+
+    topicLegend = ax1.legend(handles=[patch],labels = [legend], title="Topics",fontsize=18,frameon=False, ncol=1,loc="upper left",bbox_to_anchor=(0.98,1.0))
+    plt.setp(topicLegend.get_title(),fontsize=22)
+    ax2.text(0.5, (c1 + f1)/2, '@' + username1, zorder = 30, horizontalalignment = 'center', verticalalignment = 'center',
+             color = edgecolor1, weight = "bold",fontsize= 42, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':8})
+    ax3.text(0.5, (c2 + f2)/2, '@' + username2, zorder = 30, horizontalalignment = 'center', verticalalignment = 'center',
+             color = edgecolor2, weight = "bold",fontsize= 42, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':8})
+
+    ax1.set_title('User Breakdown (' + plot + ' degree)',fontsize = 32)
     Xticks = [0.0,0.2,0.4,0.6,0.8,1.0]
     nYticks = (Ceiling - Floor)/5
     Yticks = range(Floor,Ceiling)[::nYticks]
-    ax1.set_xticklabels(Xticks,fontsize = 18)
-    ax1.set_yticklabels(Yticks,fontsize = 18)
+    ax1.set_xticklabels(Xticks,fontsize = 20)
+    ax1.set_yticklabels(Yticks,fontsize = 20)
     ax1.set_xticks(Xticks)
     ax1.set_yticks(Yticks)
     ax1.set_ylim(Floor,Ceiling)
-    ax1.set_xlabel('Participation coefficient, P',fontsize=20)
-    ax1.set_ylabel('Within-module degree, Z',fontsize=20)
+    ax1.set_xlabel('Participation coefficient, P',fontsize=28)
+    ax1.set_ylabel('Within-module degree, Z',fontsize=28)
 
-    ImageName = "../summary/" + "UserCarto_" + username + "_" + plot + ".pdf"
+    ImageName = "../summary/" + "UserCarto_" + username1 + "_vs_" + username2 +  "_" + plot + ".pdf"
     fig.tight_layout()
     fig.savefig(ImageName, bbox_inches='tight',format='pdf',dpi = fig.dpi)
