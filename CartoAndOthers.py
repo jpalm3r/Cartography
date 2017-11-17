@@ -1,3 +1,4 @@
+
 def cartography(G_0, hashtag, plot = None):
 
     # Script that takes a graph (G) and updates a gdf file with the within
@@ -179,6 +180,7 @@ def cartography(G_0, hashtag, plot = None):
 
     # Computing the best partition:
     #   - The partition is defined to be computed for undirected graphs.
+    print ('  >>> Finding communities...')
     G_undirected = G.to_undirected()
     partition = community.best_partition(G_undirected)
     numPartitions = max(partition.values()) + 1
@@ -207,7 +209,7 @@ def cartography(G_0, hashtag, plot = None):
         PlotFloor = 0
 
         for module in MODULES:
-
+            print ('  >>> Updating graph...')
             ALL_Ks = [links_in_module(G,node_i,module, In=True, Out=True) for node_i in module]
             ALL_Ks_In = [links_in_module(G,node_i,module, In=True, Out=False) for node_i in module]
             ALL_Ks_Out = [links_in_module(G,node_i,module, In=False, Out=True) for node_i in module]
@@ -275,6 +277,7 @@ def cartography(G_0, hashtag, plot = None):
     DegreeKinds = ['In','Out','All']
     if (plot in DegreeKinds):
 
+        print ('  >>> Ploting...')
         zKind = None
         if (plot == 'In'): zKind = 'z_In'
         if (plot == 'Out'): zKind = 'z_Out'
@@ -494,7 +497,7 @@ def TopicBreakdown(G,hashtag,plot='All'):
 
     return P
 
-def UserBreakdown(username1, username2, username3 = None, plot='All'):
+def UserBreakdown(username1, username2, username3 = None, plot='All',sfig = 'svg'):
 
     import matplotlib.pyplot as plt
     import os
@@ -508,9 +511,14 @@ def UserBreakdown(username1, username2, username3 = None, plot='All'):
     Hashtags = [h[:-4] for h in H]
     Hnums = range(1,len(H)+1)
 
+    if len(Hashtags) == 0:
+        print ('')
+        print ('   ERROR! Empty gdf folder')
+        print ('')
+
     L = [str(topic[1]) + ' ' + topic[0] + '\n' for topic in zip(Hashtags, Hnums)]
 
-    Lnew = [(word.replace('#','')).replace(' ', ' #') for word in L]
+    Lnew = [(word.replace('#','')).replace(' ', ' #',1) for word in L]
     legend = "".join(Lnew)
     patch = mpatches.Patch(color='None', label= legend)
 
@@ -580,7 +588,7 @@ def UserBreakdown(username1, username2, username3 = None, plot='All'):
 
 
     Ceiling = int(max(ZsFlat)) + 3
-    Floor = int(min(ZsFlat,-3))
+    Floor = int(min(ZsFlat,-8))
 
     c1 = c2 = 8
     f1 = f2 = -2
@@ -604,10 +612,16 @@ def UserBreakdown(username1, username2, username3 = None, plot='All'):
 
     topicLegend = ax1.legend(handles=[patch],labels = [legend], title="Topics",fontsize=18,frameon=False, ncol=1,loc="upper left",bbox_to_anchor=(0.98,1.0))
     plt.setp(topicLegend.get_title(),fontsize=22)
+
     ax2.text(0.5, (c1 + f1)/2, '@' + username1, zorder = 30, horizontalalignment = 'center', verticalalignment = 'center',
-             color = edgecolor1, weight = "bold",fontsize= 42, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':8})
+             color = edgecolor1, weight = "bold",fontsize= 52, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':8})
+    disclaimer1 = '(*) This user participated in ' + str(T[0]) + ' out of the ' + str(len(Hnums)) + ' topics.'
+    ax2.text(0.01, f1 + 0.4, disclaimer1, zorder = 50, horizontalalignment = 'left', verticalalignment = 'center',fontsize= 14, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':8})
+
     ax3.text(0.5, (c2 + f2)/2, '@' + username2, zorder = 30, horizontalalignment = 'center', verticalalignment = 'center',
-             color = edgecolor2, weight = "bold",fontsize= 42, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':8})
+             color = edgecolor2, weight = "bold",fontsize= 52, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':8})
+    disclaimer2 = '(*) This user participated in ' + str(T[1]) + ' out of the ' + str(len(Hnums)) + ' topics.'
+    ax3.text(0.01, f2 + 0.4, disclaimer2, zorder = 50, horizontalalignment = 'left', verticalalignment = 'center',fontsize= 14, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':8})
 
     ax1.set_title('User Breakdown (' + plot + ' degree)',fontsize = 32)
     Xticks = [0.0,0.2,0.4,0.6,0.8,1.0]
@@ -621,6 +635,6 @@ def UserBreakdown(username1, username2, username3 = None, plot='All'):
     ax1.set_xlabel('Participation coefficient, P',fontsize=28)
     ax1.set_ylabel('Within-module degree, Z',fontsize=28)
 
-    ImageName = "../summary/" + "UserCarto_" + username1 + "_vs_" + username2 +  "_" + plot + ".pdf"
+    ImageName = "../summary/" + "UserCarto_" + username1 + "_vs_" + username2 +  "_" + plot + "." + sfig
     fig.tight_layout()
-    fig.savefig(ImageName, bbox_inches='tight',format='pdf',dpi = fig.dpi)
+    fig.savefig(ImageName, bbox_inches='tight',format=sfig,dpi = fig.dpi)
