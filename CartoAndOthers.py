@@ -1,10 +1,14 @@
-
-def cartography(G_0, hashtag, plot = None):
+def cartography(G_0, hashtag, plot = None, sfig = None):
 
     # Script that takes a graph (G) and updates a gdf file with the within
     # module degree (Z), and he participation coefficient (P). Based on these
     # the node role in the network is also computed and added to the gdf.
     # The returning object is the updated .gdf file and a cartography plot
+
+    # Optional arguments:
+    #    plot: 'In','Out','All' to specify what kind of degree you want to visualize.
+    #           If ommitted, or the answer does not match any of the three nothing is plotted.
+    #    sfig: Specifies the format for the saved figure. If ommitted nothins is saved.
 
     import community
     import numpy as np
@@ -88,21 +92,7 @@ def cartography(G_0, hashtag, plot = None):
 
             G.node[n_i].update({'Out_role' : role})
 
-    def InCartoPlot(G1,node,Z):
-
-        Z_range = (-100,100)
-        inplot = False
-        if (G1.node[node][Z] > Z_range[0])  and (G1.node[node][Z] < Z_range[1]):
-            inplot = True
-
-        return inplot
-
-    def Relevance(G,node, K = 'All'):
-
-        Z = None
-        if (K == 'All'): Z = 'z'
-        elif (K == 'In'): Z = 'z_In'
-        elif (K == 'Out'): Z = 'z_Out'
+    def Relevance(G,node, Z):
 
         z_node = G.node[node][Z]
         P_node = G.node[node]["P_coef"]
@@ -110,45 +100,25 @@ def cartography(G_0, hashtag, plot = None):
 
         return relevance
 
-    def FindKeyRoles(G1,module1, K1 = 'All',Log = True):
-        import operator
-
-        Z = None
-        if (K1 == 'All'): Z = 'z'
-        elif (K1 == 'In'): Z = 'z_In'
-        elif (K1 == 'Out'): Z = 'z_Out'
+    def FindKeyRoles(G1,module1, Z):
 
         R = {}
-        Sizes = []
         for node in module1:
-            if InCartoPlot(G1,node,Z):
-                relevance = Relevance(G1, node, K = K1)
-                R.update({node:relevance})
-            Sizes.append(G1.degree(node))
+            relevance = Relevance(G1, node, Z)
+            R.update({node:relevance})
 
-        ScaleSqrt = 600
-        ScaleLog = 15000
-        NormSizes = [float(i)/sum(Sizes) for i in Sizes]
-        LogNormSizes = [ScaleLog*np.log(x+1) for x in NormSizes]
-        SqrtNormSizes = [ScaleSqrt*2*np.sqrt(x)/(x+1) for x in NormSizes]
-
-        Key1 = max(R.iteritems(), key=operator.itemgetter(1))[0]
+        Key1 = sorted(R.iteritems(), key=lambda (k,v): (v,k))[-1][0]
         del R[Key1]
-        Key2 = max(R.iteritems(), key=operator.itemgetter(1))[0]
+        Key2 = sorted(R.iteritems(), key=lambda (k,v): (v,k))[-1][0]
         del R[Key2]
-        Key3 = max(R.iteritems(), key=operator.itemgetter(1))[0]
+        Key3 = sorted(R.iteritems(), key=lambda (k,v): (v,k))[-1][0]
         del R[Key3]
 
         HUBS = [[Key1, Key2, Key3],
                  [G1.node[Key1]['P_coef'],G1.node[Key2]['P_coef'],G1.node[Key3]['P_coef']],
                  [G1.node[Key1][Z],G1.node[Key2][Z],G1.node[Key3][Z]]]
 
-        if(Log == True):
-            N = LogNormSizes
-        else:
-            N = SqrtNormSizes
-
-        return HUBS, N
+        return HUBS
 
     def checkNAN(LIST):
 
@@ -180,95 +150,117 @@ def cartography(G_0, hashtag, plot = None):
 
     # Computing the best partition:
     #   - The partition is defined to be computed for undirected graphs.
-    print ('  >>> Finding communities...')
-    G_undirected = G.to_undirected()
-    partition = community.best_partition(G_undirected)
-    numPartitions = max(partition.values()) + 1
-    MODULES = [[] for _ in range(numPartitions)]
+    justread = 'community_id' in G.nodes(data=True)[0][1].keys()
 
-    # MODULES is a list continaing sublists representing the different modules
-    # in the network. Each sublist contains the labels of all nodes of that module
+    if justread == False:
+        print ('  >>> Finding communities...')
+        G_undirected = G.to_undirected()
+        partition = community.best_partition(G_undirected)
+        numPartitions = max(partition.values()) + 1
+        MODULES = [[] for _ in range(numPartitions)]
 
-    for index, value in enumerate(partition.values()):
-        MODULES[value].append(partition.keys()[index])
+        # MODULES is a list continaing sublists representing the different modules
+        # in the network. Each sublist contains the labels of all nodes of that module
 
-    MODULES.sort(reverse=True,key=len)
+        for index, value in enumerate(partition.values()):
+            MODULES[value].append(partition.keys()[index])
+
+        MODULES.sort(reverse=True,key=len)
 
     ###########################################################################
     #                            UPDATING GDF                                 #
     ###########################################################################
 
-    # Checking for the attributes of the first node in G to see if the graph
-    # has already the cartography attributes
-    FirstUser = G.nodes(data=True)[0]
-    if ('community_id' in FirstUser[1]):
-        print ("       >> Node attributes in place, proceeding with the plot.")
-        print (" ")
+        # Checking for the attributes of the first node in G to see if the graph
+        # has already the cartography attributes
+        FirstUser = G.nodes(data=True)[0]
+        if ('community_id' in FirstUser[1]):
+            print ("       >> Node attributes in place, proceeding with the plot.")
+            print (" ")
+        else:
+            PlotCeiling = 0
+            PlotFloor = 0
+
+            for module in MODULES:
+                print ('  >>> Updating graph...')
+                ALL_Ks = [links_in_module(G,node_i,module, In=True, Out=True) for node_i in module]
+                ALL_Ks_In = [links_in_module(G,node_i,module, In=True, Out=False) for node_i in module]
+                ALL_Ks_Out = [links_in_module(G,node_i,module, In=False, Out=True) for node_i in module]
+
+                avg_Ks = np.mean(ALL_Ks)
+                avg_Ks_In = np.mean(ALL_Ks_In)
+                avg_Ks_Out = np.mean(ALL_Ks_Out)
+
+                std_Ks = np.std(ALL_Ks)
+                std_Ks_In = np.std(ALL_Ks_In)
+                std_Ks_Out = np.std(ALL_Ks_Out)
+
+
+                for node in module:
+
+                    G.node[node].update({'community_id' : partition[node]})
+
+                    # i) Computing within module degree (Z). Given that we are working with a DiGraph
+                    #    this parameter depends on the kind of links you are taking into account: nodes
+                    #    that go in the node, these going out of the node, or both of them.
+
+                    # Number of links of node to other nodes in its module
+                    k_s_i = links_in_module(G,node,module, In=True, Out=True)
+                    k_s_i_In = links_in_module(G,node,module, In=True, Out=False)
+                    k_s_i_Out = links_in_module(G,node,module, In=False, Out=True)
+
+                    dummy_z = -3 # Dummy value to avoid NaN problem
+
+                    if (std_Ks != 0.0): zi = (k_s_i - avg_Ks)/std_Ks
+                    else: zi = dummy_z
+
+                    if (std_Ks_In != 0.0): zi_In = (k_s_i_In - avg_Ks_In)/std_Ks_In
+                    else: zi_In = dummy_z
+
+                    if (std_Ks_Out != 0.0): zi_Out = (k_s_i_Out - avg_Ks_Out)/std_Ks_Out
+                    else: zi_Out = dummy_z
+
+                    G.node[node].update({'z' : zi})
+                    G.node[node].update({'z_In' : zi_In})
+                    G.node[node].update({'z_Out' : zi_Out})
+
+                    maxZ = int(max(zi,zi_In,zi_Out))
+                    minZ = int(min(zi,zi_In,zi_Out))
+                    if  (PlotCeiling < maxZ): PlotCeiling = maxZ
+                    if  (PlotFloor > minZ): PlotFloor = minZ
+
+                    # ii) Computing participation coefficient (P)
+
+                    ki = G.degree(node)
+                    x = sum((float(links_in_module(G,node,mod))/ki)**2 for mod in MODULES)
+                    Pi = 1 - x
+
+                    G.node[node].update({'P_coef' : Pi})
+
+                    # iii) Finding node role based on Z and P
+
+                    FindRole(G,node)
+                    FindRole(G,node, degree = "In")
+                    FindRole(G,node, degree = "Out")
+
+    ###########################################################################
+    #                            READING COMMUNITIES                          #
+    ###########################################################################
+
     else:
-        PlotCeiling = 0
-        PlotFloor = 0
+        print ('  >>> Reading communities...')
+        MODULES = []
+        for node in G.nodes(data=True):
+            ComId = int(node[1]['community_id'])
+            LenMod = len(MODULES)
+            diff = ComId + 1 - LenMod
+            if diff > 0:
+                for t in range(diff):
+                    MODULES.append([])
+            MODULES[ComId].append(node[0])
 
-        for module in MODULES:
-            print ('  >>> Updating graph...')
-            ALL_Ks = [links_in_module(G,node_i,module, In=True, Out=True) for node_i in module]
-            ALL_Ks_In = [links_in_module(G,node_i,module, In=True, Out=False) for node_i in module]
-            ALL_Ks_Out = [links_in_module(G,node_i,module, In=False, Out=True) for node_i in module]
-
-            avg_Ks = np.mean(ALL_Ks)
-            avg_Ks_In = np.mean(ALL_Ks_In)
-            avg_Ks_Out = np.mean(ALL_Ks_Out)
-
-            std_Ks = np.std(ALL_Ks)
-            std_Ks_In = np.std(ALL_Ks_In)
-            std_Ks_Out = np.std(ALL_Ks_Out)
-
-
-            for node in module:
-
-                G.node[node].update({'community_id' : partition[node]})
-
-                # i) Computing within module degree (Z). Given that we are working with a DiGraph
-                #    this parameter depends on the kind of links you are taking into account: nodes
-                #    that go in the node, these going out of the node, or both of them.
-
-                # Number of links of node to other nodes in its module
-                k_s_i = links_in_module(G,node,module, In=True, Out=True)
-                k_s_i_In = links_in_module(G,node,module, In=True, Out=False)
-                k_s_i_Out = links_in_module(G,node,module, In=False, Out=True)
-
-                dummy_z = -3 # Dummy value to avoid NaN problem
-
-                if (std_Ks != 0.0): zi = (k_s_i - avg_Ks)/std_Ks
-                else: zi = dummy_z
-
-                if (std_Ks_In != 0.0): zi_In = (k_s_i_In - avg_Ks_In)/std_Ks_In
-                else: zi_In = dummy_z
-
-                if (std_Ks_Out != 0.0): zi_Out = (k_s_i_Out - avg_Ks_Out)/std_Ks_Out
-                else: zi_Out = dummy_z
-
-                G.node[node].update({'z' : zi})
-                G.node[node].update({'z_In' : zi_In})
-                G.node[node].update({'z_Out' : zi_Out})
-
-                maxZ = int(max(zi,zi_In,zi_Out))
-                minZ = int(min(zi,zi_In,zi_Out))
-                if  (PlotCeiling < maxZ): PlotCeiling = maxZ
-                if  (PlotFloor > minZ): PlotFloor = minZ
-
-                # ii) Computing participation coefficient (P)
-
-                ki = G.degree(node)
-                x = sum((float(links_in_module(G,node,mod))/ki)**2 for mod in MODULES)
-                Pi = 1 - x
-
-                G.node[node].update({'P_coef' : Pi})
-
-                # iii) Finding node role based on Z and P
-
-                FindRole(G,node)
-                FindRole(G,node, degree = "In")
-                FindRole(G,node, degree = "Out")
+        MODULES.sort(reverse=True,key=len)
+        numPartitions = len(MODULES)
 
     ###########################################################################
     #                            PLOTTING TIME                                #
@@ -277,7 +269,7 @@ def cartography(G_0, hashtag, plot = None):
     DegreeKinds = ['In','Out','All']
     if (plot in DegreeKinds):
 
-        print ('  >>> Ploting...')
+        print ('  >>> Plotting...')
         zKind = None
         if (plot == 'In'): zKind = 'z_In'
         if (plot == 'Out'): zKind = 'z_Out'
@@ -306,6 +298,12 @@ def cartography(G_0, hashtag, plot = None):
         OTHERS = {}
         RELEVANCES = []
 
+        ModuleSizes = [G.degree(user) for module in MODULES for user in module]
+        # FlatList = [item for sublist in List for item in sublist]
+        ScaleFactor = 7000
+        NormModSizes = [ScaleFactor*float(deg)/max(ModuleSizes) for deg in ModuleSizes]
+        count = 0
+
         for module in MODULES:
             # MODULES is ordered decreasingly, so the first modules are printed
             # with color for highlighting
@@ -315,8 +313,8 @@ def cartography(G_0, hashtag, plot = None):
 
             if (c_index < Categories2plot):
 
-                big3,ModuleSizes = FindKeyRoles(G, module, K1 = plot)
-                RELEVANCES = RELEVANCES + [Relevance(G,user,K=plot) for user in big3[0]]
+                big3 = FindKeyRoles(G, module, zKind)
+                RELEVANCES = RELEVANCES + [Relevance(G,user,zKind) for user in big3[0]]
 
                 Color = C[c_index]
                 Order = 100
@@ -338,14 +336,19 @@ def cartography(G_0, hashtag, plot = None):
             else:
 
                 for user in module:
-                    r = Relevance(G,user,K=plot)
+                    r = Relevance(G,user,zKind)
                     if r > np.mean(RELEVANCES):
                         OTHERS.update({user:{'coord':(G.node[user]['P_coef'],G.node[user][zKind]), 'num': 0}})
 
                 Color = 'LightGray'
                 Order = 20
 
-            ax1.scatter(Ps,Zs, c = Color, s=ModuleSizes, lw = 0, zorder=Order)
+            ini = count
+            fin = count + len(module)
+
+            ax1.scatter(Ps,Zs, c = Color, s=NormModSizes[ini:fin], lw = 0, zorder=Order)
+
+            count = fin
 
         title = "#" + hashtag + " (" + plot + " Degree)"
 
@@ -389,8 +392,9 @@ def cartography(G_0, hashtag, plot = None):
         axPercents.patch.set_alpha(0.2)
 
         fig.tight_layout()
-        ImageName = "../summary/" + "carto_" + hashtag + "_" + plot + ".pdf"
-        fig.savefig(ImageName, bbox_inches='tight',format='pdf',dpi = fig.dpi)
+        if sfig in ['pdf','png','svg']:
+            ImageName = "../summary/" + "carto_" + hashtag + "_" + plot + "." + sfig
+            fig.savefig(ImageName, bbox_inches='tight',format=sfig,dpi = fig.dpi)
 
     return G
 
@@ -497,7 +501,7 @@ def TopicBreakdown(G,hashtag,plot='All'):
 
     return P
 
-def UserBreakdown(username1, username2, username3 = None, plot='All',sfig = 'svg'):
+def UserBreakdown(username1, username2, username3 = None, plot='All',sfig = 'png'):
 
     import matplotlib.pyplot as plt
     import os
