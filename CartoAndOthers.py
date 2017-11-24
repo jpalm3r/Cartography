@@ -1,3 +1,4 @@
+
 def cartography(G_0, hashtag, plot = None, sfig = None):
 
     # Script that takes a graph (G) and updates a gdf file with the within
@@ -206,8 +207,10 @@ def cartography(G_0, hashtag, plot = None, sfig = None):
 
                     # Number of links of node to other nodes in its module
                     k_s_i = links_in_module(G,node,module, In=True, Out=True)
-                    k_s_i_In = links_in_module(G,node,module, In=True, Out=False)
-                    k_s_i_Out = links_in_module(G,node,module, In=False, Out=True)
+                    k_s_i_In = links_in_module(G,node,module,
+                                               In=True, Out=False)
+                    k_s_i_Out = links_in_module(G,node,module,
+                                                In=False, Out=True)
 
                     dummy_z = -3 # Dummy value to avoid NaN problem
 
@@ -289,7 +292,8 @@ def cartography(G_0, hashtag, plot = None, sfig = None):
         # For readability, only plotting 6 biggest categories
         Categories2plot = min(numPartitions,6)
         # Colors for the categories
-        C = ["Tomato","DarkTurquoise","DeepPink","SlateBlue","SpringGreen","Teal"]
+        C = ["Tomato","DarkTurquoise","DeepPink",
+             "SlateBlue","SpringGreen","Teal"]
         c_index = 0
         # Vectors for the legend of relevant users
         CategoryLeaders = []
@@ -324,7 +328,8 @@ def cartography(G_0, hashtag, plot = None, sfig = None):
                 nums = Numbers[3*c_index:3*(1+c_index)]
                 for num, label, x, y in zip(nums, big3[0],big3[1],big3[2]):
                     ax1.annotate(str(num),xy=(x, y), xytext=(-10, 0),
-                                 textcoords='offset points',fontsize = 16,zorder=150)
+                                 textcoords='offset points',fontsize = 16,
+                                 zorder=150)
                 NameNums = []
                 for i in range(3):
                     NameNums.append(big3[0][i] + " (" + str(nums[i]) + ")")
@@ -338,7 +343,9 @@ def cartography(G_0, hashtag, plot = None, sfig = None):
                 for user in module:
                     r = Relevance(G,user,zKind)
                     if r > np.mean(RELEVANCES):
-                        OTHERS.update({user:{'coord':(G.node[user]['P_coef'],G.node[user][zKind]), 'num': 0}})
+                        OTHERS.update({user:{'coord':(G.node[user]['P_coef'],
+                                                      G.node[user][zKind]),
+                                                        'num': 0}})
 
                 Color = 'LightGray'
                 Order = 20
@@ -346,7 +353,8 @@ def cartography(G_0, hashtag, plot = None, sfig = None):
             ini = count
             fin = count + len(module)
 
-            ax1.scatter(Ps,Zs, c = Color, s=NormModSizes[ini:fin], lw = 0, zorder=Order)
+            ax1.scatter(Ps,Zs, c = Color, s=NormModSizes[ini:fin], lw = 0,
+                        zorder=Order)
 
             count = fin
 
@@ -359,8 +367,12 @@ def cartography(G_0, hashtag, plot = None, sfig = None):
 
 
         ax1.set_title(title, fontsize=36)
-        legendRelevant = ax2.legend(handles=PATCHES,labels=CategoryLeaders,title="TOP3 relevant users by community",fontsize=18,frameon=False,
-                            ncol=Categories2plot,loc="upper center",bbox_to_anchor=(0.5,-0.02))
+        legendRelevant = ax2.legend(handles=PATCHES,labels=CategoryLeaders,
+                                    title="TOP3 relevant users by community",
+                                    fontsize=18,frameon=False,
+                                    ncol=Categories2plot,
+                                    loc="upper center",
+                                    bbox_to_anchor=(0.5,-0.02))
         plt.setp(legendRelevant.get_title(),fontsize=22)
 
         # Plotting other relevant users that are not in the TOP communities
@@ -383,8 +395,10 @@ def cartography(G_0, hashtag, plot = None, sfig = None):
         #Drawing node distribution
         axPercents = fig.add_axes([0.082, 0.64, 0.22, 0.28]) # [relX, relY, relWidth, relHeight]
 
-        legendOthers = ax1.legend(handles=OtherPATCHES,labels=Others,title="Other Users",fontsize=18,frameon=False,
-                            ncol=1,loc="upper left",bbox_to_anchor=(1.0,1.0))
+        legendOthers = ax1.legend(handles=OtherPATCHES,labels=Others,
+                                  title="Other Users",fontsize=18,
+                                  frameon=False,ncol=1,loc="upper left",
+                                  bbox_to_anchor=(1.0,1.0))
         plt.setp(legendOthers.get_title(),fontsize=22)
 
         P = TopicBreakdown(G,hashtag,plot = plot)
@@ -412,23 +426,23 @@ def DrawCarto(ax,Ceiling,Floor,hashtag, Percents = None, user = None, colorbox =
 
     #Preparing the vectors with the roles and their position
 
-    Roles = ['(R1)',' Peripheral \n node (R2)',' Connector \n node (R3)',' Kinless \n node (R4)',
-             ' Provincial \n hub (R5)',' Connector \n hub (R6)',' Kinless \n hub (R7)']
+    Roles = ['(R1)',' Peripheral \n node (R2)',' Connector \n node (R3)',
+             ' Kinless \n node (R4)',' Provincial \n hub (R5)',
+             ' Connector \n hub (R6)',' Kinless \n hub (R7)']
     Roles_Short = ['R1','R2','R3','R4','R5','R6','R7']
-    Q = [((0.0, Floor), 0.05, h2), ((0.05, Floor), 0.575, h2), ((0.625, Floor), 0.175, h2), ((0.8, Floor), 0.2, h2),
-                 ((0.0, 2.5), 0.3, h1), ((0.3,2.5), 0.45, h1), ((0.75,2.5), 0.25, h1)]
+    Q = [((0.0, Floor), 0.05, h2), ((0.05, Floor), 0.575, h2),
+         ((0.625, Floor), 0.175, h2), ((0.8, Floor), 0.2, h2),
+         ((0.0, 2.5), 0.3, h1), ((0.3,2.5), 0.45, h1), ((0.75,2.5), 0.25, h1)]
     numQ = len(Q)
 
     color1 = 'DarkGray'
     fs = 24
 
-    #   If Percents is not NULL, then this function computes the inset with the total node distribution
+    #   If Percents is not NULL, then this function computes the inset
+    #   with the total node distribution
 
     if Percents != None:
         color1 = 'Gray'
-    #        color2 = 'LightGray'
-    #        ax.text(0.5, float(Ceiling + Floor)/2, '#' + hashtag, horizontalalignment = 'center', verticalalignment = 'center',
-    #         color = color2, weight = "bold",fontsize=52, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':0})
         if user == None: ax.set_title('Total node distribution', fontsize=16)
         fs = 20
         for r in range(numQ):
@@ -454,15 +468,30 @@ def DrawCarto(ax,Ceiling,Floor,hashtag, Percents = None, user = None, colorbox =
     for r in range(numQ):
         centerQX = Q[r][0][0] + Q[r][1]/2
         centerQY = Q[r][0][1] + Q[r][2]/2
-        ax.add_patch(patches.Rectangle(Q[r][0], Q[r][1], Q[r][2], facecolor='white', edgecolor="Gray", ls = '--', lw = 0.7, alpha=0.1))
+        ax.add_patch(patches.Rectangle(Q[r][0], Q[r][1], Q[r][2],
+                                       facecolor='white', edgecolor="Gray",
+                                       ls = '--', lw = 0.7, alpha=0.1))
         if Percents != None:
             # Filling each quadrant proportional to the percentage
-            ax.add_patch(patches.Rectangle(Q[r][0], Q[r][1], Percents[r]/100*Q[r][2], facecolor=fcolor, edgecolor="OrangeRed",lw = 0.0, alpha=0.7,zorder = 5))
-            ax.text(centerQX, centerQY, Roles_Short[r] , horizontalalignment = 'center', verticalalignment = 'center',
-                     color = color1, weight = "bold",fontsize= fs, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':0},zorder = 10)
+            ax.add_patch(patches.Rectangle(Q[r][0], Q[r][1],
+                                           Percents[r]/100*Q[r][2],
+                                           facecolor=fcolor,
+                                           edgecolor="OrangeRed",
+                                           lw = 0.0, alpha=0.7,zorder = 5))
+            ax.text(centerQX, centerQY, Roles_Short[r],
+                    horizontalalignment = 'center',
+                    verticalalignment = 'center',
+                    color = color1, weight = "bold", fontsize= fs,
+                    style='normal',
+                    bbox={'facecolor':'white', 'alpha':0.0, 'pad':0},
+                    zorder = 10)
         else:
-            ax.text(centerQX, centerQY, Roles[r] , horizontalalignment = 'center', verticalalignment = 'center',
-                     color = color1, weight = "bold",fontsize= fs, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':0})
+            ax.text(centerQX, centerQY, Roles[r],
+                    horizontalalignment = 'center',
+                    verticalalignment = 'center',
+                    color = color1, weight = "bold",fontsize= fs,
+                    style='normal',
+                    bbox={'facecolor':'white', 'alpha':0.0, 'pad':0})
 
     ax.set_xlim(0,1)
     ax.set_ylim(Floor,Ceiling)
@@ -501,7 +530,8 @@ def TopicBreakdown(G,hashtag,plot='All'):
 
     return P
 
-def UserBreakdown(username1, username2, username3 = None, plot='All',sfig = 'png'):
+def UserBreakdown(username1, username2, username3 = None,
+                  plot='All',sfig = 'png'):
 
     import matplotlib.pyplot as plt
     import os
@@ -581,13 +611,13 @@ def UserBreakdown(username1, username2, username3 = None, plot='All',sfig = 'png
     # Creating subfigures, thye contain the box diagram with percentages
     h_ax = w_ax = 0.45
     y_ax = -0.48
-    ax2 = fig.add_axes([0.04, y_ax, w_ax, h_ax]) # [relX, relY, relWidth, relHeight]
-    ax3 = fig.add_axes([0.53, y_ax, w_ax, h_ax]) # [relX, relY, relWidth, relHeight]
+    # [relX, relY, relWidth, relHeight]
+    ax2 = fig.add_axes([0.04, y_ax, w_ax, h_ax])
+    ax3 = fig.add_axes([0.53, y_ax, w_ax, h_ax])
     for i in range(Nusers):
         for label, x, y in zip(Hs[i],Ps[i],Zs[i]):
                 indInH = Hashtags.index(label)
                 ax1.annotate(Hnums[indInH], xy=(x, y), xytext=(x, y - 0.1),
-                #                     arrowprops=dict(arrowstyle="->", connectionstyle="arc3"),
                              textcoords='data',fontsize = 16,zorder=150)
 
 
@@ -603,29 +633,44 @@ def UserBreakdown(username1, username2, username3 = None, plot='All',sfig = 'png
     edgecolor2 = '#003399'
 
     ax1 = DrawCarto(ax1,Ceiling,Floor,topic)
-    ax2 = DrawCarto(ax2,c1,f1,topic,Percents=P[0],user=username1,colorbox=color1)
-    ax3 = DrawCarto(ax3,c2,f2,topic,Percents=P[1],user=username2,colorbox=color2)
+    ax2 = DrawCarto(ax2,c1,f1,topic,
+                    Percents=P[0],user=username1,colorbox=color1)
+    ax3 = DrawCarto(ax3,c2,f2,topic,
+                    Percents=P[1],user=username2,colorbox=color2)
 
     Ceiling += 3 # This happens in DrawCarto
-    ax1.scatter(Ps[0],Zs[0],s = KsCale[0], c= color1, edgecolor = edgecolor1, lw = 1.0, zorder=100)
-    ax1.scatter(Ps[1],Zs[1],s = KsCale[1], c= color2, edgecolor = edgecolor2, lw = 1.0, zorder=100)
+    ax1.scatter(Ps[0],Zs[0],s = KsCale[0],
+                c= color1, edgecolor = edgecolor1, lw = 1.0, zorder=100)
+    ax1.scatter(Ps[1],Zs[1],s = KsCale[1],
+                c= color2, edgecolor = edgecolor2, lw = 1.0, zorder=100)
 
-    #   WIP WIP WIP
-    #    if username3 != None:
-    #        ax1.scatter(Ps[2],Zs[2],s = KsCale[2], c= '#e600ac', edgecolor = '#b300b3', lw = 1.0, zorder=100)
-
-    topicLegend = ax1.legend(handles=[patch],labels = [legend], title="Topics",fontsize=18,frameon=False, ncol=1,loc="upper left",bbox_to_anchor=(0.98,1.0))
+    topicLegend = ax1.legend(handles=[patch],labels = [legend],
+                             title="Topics",fontsize=18,
+                             frameon=False, ncol=1,loc="upper left",
+                             bbox_to_anchor=(0.98,1.0))
     plt.setp(topicLegend.get_title(),fontsize=22)
 
-    ax2.text(0.5, (c1 + f1)/2, '@' + username1, zorder = 30, horizontalalignment = 'center', verticalalignment = 'center',
-             color = edgecolor1, weight = "bold",fontsize= 52, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':8})
+    ax2.text(0.5, (c1 + f1)/2, '@' + username1, zorder = 30,
+             horizontalalignment = 'center', verticalalignment = 'center',
+             color = edgecolor1, weight = "bold",fontsize= 52, style='normal',
+             bbox={'facecolor':'white', 'alpha':0.0, 'pad':8})
     disclaimer1 = '(*) This user participated in ' + str(T[0]) + ' out of the ' + str(len(Hnums)) + ' topics.'
-    ax2.text(0.01, f1 + 0.4, disclaimer1, zorder = 50, horizontalalignment = 'left', verticalalignment = 'center',fontsize= 14, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':8})
 
-    ax3.text(0.5, (c2 + f2)/2, '@' + username2, zorder = 30, horizontalalignment = 'center', verticalalignment = 'center',
-             color = edgecolor2, weight = "bold",fontsize= 52, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':8})
+    ax2.text(0.01, f1 + 0.4, disclaimer1, zorder = 50,
+             horizontalalignment = 'left', verticalalignment = 'center',
+             fontsize= 14, style='normal',
+             bbox={'facecolor':'white', 'alpha':0.0, 'pad':8})
+
+    ax3.text(0.5, (c2 + f2)/2, '@' + username2, zorder = 30,
+             horizontalalignment = 'center', verticalalignment = 'center',
+             color = edgecolor2, weight = "bold",fontsize= 52, style='normal',
+             bbox={'facecolor':'white', 'alpha':0.0, 'pad':8})
     disclaimer2 = '(*) This user participated in ' + str(T[1]) + ' out of the ' + str(len(Hnums)) + ' topics.'
-    ax3.text(0.01, f2 + 0.4, disclaimer2, zorder = 50, horizontalalignment = 'left', verticalalignment = 'center',fontsize= 14, style='normal', bbox={'facecolor':'white', 'alpha':0.0, 'pad':8})
+
+    ax3.text(0.01, f2 + 0.4, disclaimer2, zorder = 50,
+             horizontalalignment = 'left', verticalalignment = 'center',
+             fontsize= 14, style='normal',
+             bbox={'facecolor':'white', 'alpha':0.0, 'pad':8})
 
     ax1.set_title('User Breakdown (' + plot + ' degree)',fontsize = 32)
     Xticks = [0.0,0.2,0.4,0.6,0.8,1.0]
@@ -642,3 +687,221 @@ def UserBreakdown(username1, username2, username3 = None, plot='All',sfig = 'png
     ImageName = "../summary/" + "UserCarto_" + username1 + "_vs_" + username2 +  "_" + plot + "." + sfig
     fig.tight_layout()
     fig.savefig(ImageName, bbox_inches='tight',format=sfig,dpi = fig.dpi)
+
+def getColumns(inFile, delim="\t", header=True):
+    """
+    Get columns of data from inFile. The order of the rows is respected
+
+    :param inFile: column file separated by delim
+    :param header: if True the first line will be considered a header line
+    :returns: a tuple of 2 dicts (cols, indexToName). cols dict has keys that
+    are headings in the inFile, and values are a list of all the entries in that
+    column. indexToName dict maps column index to names that are used as keys in
+    the cols dict. The names are the same as the headings used in inFile. If
+    header is False, then column indices (starting from 0) are used for the
+    heading names (i.e. the keys in the cols dict)
+    """
+    cols = {}
+    indexToName = {}
+    for lineNum, line in enumerate(inFile):
+        if lineNum == 0:
+            headings = line.split(delim)
+            i = 0
+            for heading in headings:
+                heading = heading.strip()
+                if header:
+                    cols[heading] = []
+                    indexToName[i] = heading
+                else:
+                    # in this case the heading is actually just a cell
+                    cols[i] = [heading]
+                    indexToName[i] = i
+                i += 1
+        else:
+            cells = line.split(delim)
+            i = 0
+            for cell in cells:
+                cell = cell.strip()
+                cols[indexToName[i]] += [cell]
+                i += 1
+
+    return cols, indexToName
+
+def RT_bd():
+    
+    import matplotlib.pyplot as plt
+    import matplotlib.patches as mpatches
+    from matplotlib import gridspec
+    import random
+
+    from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
+    from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+
+
+    class User:
+
+        def __init__(self, label = None, color = None):
+            self.label = label
+            self.TWITS = {}
+
+        def add_twit(self, hashtag = None,
+                     size = None, y_rts = None,
+                     x_ts = None, numLabel = None):
+            self.TWITS.update({hashtag:{'num':numLabel,'RTs':float(y_rts),
+                                        'Ts':float(x_ts),'Size':float(size)}})
+
+        def assign_color(self, color):
+            self.color = color
+
+
+    # Names = ['y','x','size','user','hashtag']
+    rtbd = file('../summary/rt_bd.txt','r')
+    Cols,Ind2Names = getColumns(rtbd,delim=" ",header=True)
+    rtbd.close()
+
+    xInLim = 20
+    yInLim = 100
+
+    UserDict = {}
+    hnum = 1
+    HashNums = {}
+
+    Xs = []
+    Ys = []
+    Sizes = []
+    Cs = []
+    Hashtags = []
+    PATCHES = []
+    PatchLabels = []
+
+    XsZoom = []
+    YsZoom = []
+    SizesZoom = []
+    CsZoom = []
+
+    Colors = ['MediumSpringGreen','IndianRed','Gold','Cyan',
+              'DeepPink','SandyBrown','PowderBlue','DodgerBlue',
+              'DarkViolet','MediumVioletRed','LightSeaGreen','Coral',
+              'SlateBlue','Tomato','Crimson','PeachPuff']
+    ic = 0
+
+    for i,userlabel in enumerate(Cols['user']):
+
+    # Here we modify the hashtags and give them appropriate formatting only
+    # for the legend
+        htag = Cols['hashtag'][i].replace('_unique','')
+        if htag[0] != '#':
+            htag = '#' + htag
+
+        if htag not in Hashtags:
+            Hashtags.append(htag)
+
+        if not htag in HashNums:
+            HashNums.update({htag:hnum})
+            hnum += 1
+
+        u = User(userlabel)
+        if not userlabel in UserDict:
+            color = Colors[ic]
+            ic += 1
+            u.assign_color(color)
+            UserDict.update({userlabel:u})
+
+        UserDict[userlabel].add_twit(htag, Cols['size'][i], Cols['y'][i],
+                                       Cols['x'][i], HashNums[htag])
+
+        x = UserDict[userlabel].TWITS[htag]['Ts']
+        y = UserDict[userlabel].TWITS[htag]['RTs']
+        s = UserDict[userlabel].TWITS[htag]['Size']
+        c =UserDict[userlabel].color
+
+        Xs.append(x)
+        Ys.append(y)
+        Sizes.append(s)
+        Cs.append(c)
+
+        if x < xInLim:
+            XsZoom.append(x)
+            YsZoom.append(y)
+            SizesZoom.append(s)
+            CsZoom.append(c)
+
+
+    Hashtags = list(set(Cols['hashtag']))
+    LgLabels = sorted(zip(HashNums.values(),HashNums.keys()),
+                      cmp=None, key=lambda x: x[0], reverse=False)
+    LgLabels = [str(topic[0]) + ' ' + topic[1] for topic in LgLabels]
+
+    HashLabels = ' \n\n'.join(list(LgLabels))
+
+    maxSize = max(Sizes)
+    NormSizes = [5000*sz/maxSize for sz in Sizes]
+
+    maxSizeZoom = max(SizesZoom)
+    NormSizesZoom = [(float(5000))*s/maxSizeZoom for s in SizesZoom]
+
+    fig = plt.figure(figsize=(20, 12))
+
+    gs = gridspec.GridSpec(1, 2, width_ratios=[4, 1])
+    gs.update(wspace=0.05)
+    ax1 = plt.subplot(gs[0])
+    ax2 = plt.subplot(gs[1])
+
+    ax1.scatter(Xs,Ys,s = NormSizes,c=Cs, alpha = 1, lw = 1.2, edgecolor = 'k')
+
+    axins = zoomed_inset_axes(ax1, 6, loc=1)  # zoom = 5
+    axins.scatter(XsZoom,YsZoom,s = NormSizesZoom,
+                                c=CsZoom, alpha = 1, lw = 1, edgecolor = 'k')
+
+    for user in UserDict.values():
+
+        for twit in user.TWITS.values():
+
+            x = twit['Ts']
+            y = twit['RTs']
+            n = str(twit['num'])
+
+            if x > xInLim or y > yInLim:
+                ax1.annotate(n, xy=(x,y), xytext=(-10, 0),
+                             textcoords='offset points',fontsize = 16,
+                             zorder=150)
+            else:
+                axins.annotate(n, xy=(x,y), xytext=(-5, 0),
+                             textcoords='offset points',fontsize = 14,
+                             zorder=150)
+
+        if not user in PatchLabels:
+            PatchLabels.append(user)
+            PATCHES.append(mpatches.Patch([],[],color=user.color))
+
+
+    ax2.text(0,0.25, HashLabels, fontsize = 16)
+    ax2.set_axis_off()
+
+    ax1.set_xlabel('Total number of twits',fontsize = 20)
+    ax1.set_ylabel('Averageg number of RT', fontsize = 20)
+    ax1.set_title('RT Analysis', fontsize=36)
+
+    ax1.tick_params(axis='both', which='major', labelsize=16)
+
+    lgd = ax1.legend(handles=PATCHES,labels=Cols['user'],
+                    title = 'Topics',
+                    fontsize=18,frameon=False,
+                    ncol=4,
+                    loc="upper center",
+                    bbox_to_anchor=(0.5,-0.1))
+
+    plt.setp(lgd.get_title(),fontsize=20)
+
+    # sub region of the original image
+    x1, x2, y1, y2 = 0, xInLim, 0, yInLim
+    axins.set_xlim(x1, x2)
+    axins.set_ylim(y1, y2)
+    # fix the number of ticks on the inset axes
+    axins.yaxis.get_major_locator().set_params(nbins=7)
+    axins.xaxis.get_major_locator().set_params(nbins=7)
+    axins.tick_params(axis='both', which='major', labelsize=14)
+    # draw a bbox of the region of the inset axes in the parent axes and
+    # connecting lines between the bbox and the inset axes area
+    mark_inset(ax1, axins, loc1=2, loc2=4, fc="none", ec="0.5")
+    plt.savefig('../summary/rt_bd.png', bbox_extra_artists=(lgd,), bbox_inches='tight', format = 'png')
